@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"
+        integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w=="
+        crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./asset/css/styles.css">
+    <link rel="shortcut icon" href="#">
+</head>
+
+<body>
+    <div class="player">
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <!-- Header -->
+            <header>
+                <h4>Now playing:</h4>
+                <h2>String 57th & 9th</h2>
+            </header>
+
+            <!-- CD -->
+            <div class="cd">
+                <div class="cd-thumb"
+                    style="background-image: url('');">
+                </div>
+            </div>
+
+            <!-- Control -->
+            <div class="control">
+                <div class="btn btn-repeat">
+                    <i class="fas fa-redo"></i>
+                </div>
+                <div class="btn btn-prev">
+                    <i class="fas fa-step-backward"></i>
+                </div>
+                <div class="btn btn-toggle-play">
+                    <i class="fas fa-pause icon-pause"></i>
+                    <i class="fas fa-play icon-play"></i>
+                </div>
+                <div class="btn btn-next">
+                    <i class="fas fa-step-forward"></i>
+                </div>
+                <div class="btn btn-random">
+                    <i class="fas fa-random"></i>
+                </div>
+            </div>
+
+            <!-- Time -->
+            <div class="audio-time">
+                <div class="audio-time-current">00 : 00</div>
+                <div class="audio-duration">00 : 00</div>
+            </div>
+
+            <input id="progress" class="progress" type="range" value="0" step="1" min="0" max="100">
+
+            <audio id="audio" src=""></audio>
+        </div>
+
+        <!-- Playlist -->
+        <div class="playlist">
+            <div class="song">
+                <div class="thumb">
+
+                </div>
+                <div class="body">
+                    <h3 class="title">Ten bai hat</h3>
+                    <p class="author">Ca si/ nhom nhac</p>
+
+                </div>
+                <div class="option">
+                    <i class="fas fa-ellipsis-h"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Design from: https://static.collectui.com/shots/3671744/musicloud-revolutionary-app-for-music-streaming-large -->
+    <script>
+        /**
+         * 1. Render songs ✔
+         * 2. Scroll ✔
+         * 3. Play / pause / seek ✔
+         * 4. CD rotation 
+         * 5. Next / previous
+         * 6. Random
+         * 7. Next / repeat when ending
+         * 8. Active song
+         * 9. Scroll active song into view
+         * 10. Play song when clicking
+         */
+
+        const $ = document.querySelector.bind(document);
+        const $$ = document.querySelectorAll.bind(document);
+
+        const player = $('.player');
+        const heading = $('header h2');
+        const cdThumb = $('.cd-thumb');
+        const audio = $('#audio');
+        const cd = $('.cd');
+        const playBtn = $('.btn-toggle-play');
+        const progress = $('#progress');
+        const nextBtn = $('.btn-next');
+        const prevBtn = $('.btn-prev');
+        const randomSongBtn = $('.btn-random');
+        const repeatSongBtn = $('.btn-repeat');
+        const playlist = $(".playlist");
+        const audioLength = $('.audio-duration');
+        const audioTimeTrack = $('.audio-time-current');
+        
+
+        const app = {
+            currentIndex: 0,
+            isPlaying: false,
+            isRandom: false,
+            isRepeated: false,
+            songs: [
+                {
+                    name: 'Nevada',
+                    singer: 'Vicetone',
+                    path: './asset/music/song1.mp3',
+                    image: './asset/image/song1.jpg'
+                },
+                {
+                    name: 'SummerTime',
+                    singer: 'K-391',
+                    path: './asset/music/song2.mp3',
+                    image: './asset/image/song2.jpg'
+                },
+                {
+                    name: 'Monody',
+                    singer: 'The Fat Rat',
+                    path: './asset/music/song3.mp3',
+                    image: './asset/image/song3.jpg'
+                },
+                {
+                    name: 'Reality',
+                    singer: 'Lost Frequencies',
+                    path: './asset/music/song4.mp3',
+                    image: './asset/image/song4.jpg'
+                },
+                {
+                    name: 'Remember When',
+                    singer: 'Alan Jackson',
+                    path: './asset/music/song5.mp3',
+                    image: './asset/image/song5.jpg'
+                },
+                {
+                    name: 'Demons',
+                    singer: 'Imagine Dragons',
+                    path: './asset/music/song6.mp3',
+                    image: './asset/image/song6.jpg'
+                },
+                {
+                    name: 'Bones',
+                    singer: 'Imagine Dragons',
+                    path: './asset/music/song7.mp3',
+                    image: './asset/image/song7.jpg'
+                },
+                {
+                    name: 'Make you feel my love',
+                    singer: 'Adele',
+                    path: './asset/music/song8.mp3',
+                    image: './asset/image/song8.jpg'
+                }
+            ],
+            render: function () {
+                const htmls = this.songs.map((song, index) => {
+                    return `
+                    <div class="song ${app.currentIndex === index ? 'active' : ''}" data-index="${index}">
+                        <div class="thumb"
+                            style="background-image: url('${song.image}')">
+                        </div>
+                        <div class="body">
+                            <h3 class="title">${song.name}</h3>
+                            <p class="author">${song.singer}</p>
+                        </div>
+                        <div class="option">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                    </div>
+                    `;
+                })
+                playlist.innerHTML = htmls.join('');
+            },
+            defineProperties: function() {
+                Object.defineProperty(this, 'currentSong', {
+                    get: function() {
+                        return this.songs[this.currentIndex];
+                    }
+                })
+            },
+            handleEvents: function() {
+                // Handle show and hide CD image
+                const cdWidth = cd.offsetWidth;
+                document.onscroll = function() {
+                    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+                    const newCDWidth = cdWidth - scrollTop;
+                    cd.style.width = newCDWidth > 0 ? newCDWidth + 'px': 0;
+                    cd.style.opacity = newCDWidth / cdWidth;
+                }
+                
+                
+                // Handle rotating the CD image
+                const cdSpinning = [
+                    { transform: "rotate(360deg)"}
+                ]
+                const cdRotatingTiming = {
+                    duration: 10000,
+                    iterations: Infinity
+                }
+                const cdAnimation = cdThumb.animate(cdSpinning, cdRotatingTiming);
+                cdAnimation.pause();
+                // Handle when click play and pause
+                playBtn.onclick = function() {
+                    if (app.isPlaying) {
+                        audio.pause();
+                    } else {
+                        audio.play();
+                        // console.log(audio.duration)
+                    }     
+                };
+                // listen when song is playing
+                audio.onplay = function() {
+                    app.isPlaying = true;
+                    player.classList.add('playing');
+                    cdAnimation.play();
+                };
+                // listen when song is paused
+                audio.onpause = function() {
+                    app.isPlaying = false;
+                    player.classList.remove('playing');
+                    cdAnimation.pause();
+                };
+                // handle when audio progress changes
+                audio.ontimeupdate = function() {
+                    const audioDuration = audio.duration;
+                    if (audioDuration) {
+                        progress.value = Math.floor(audio.currentTime / audioDuration * 100);
+                        // Change the time progress
+                        audioLength.textContent = String(Math.floor(audio.duration / 60)).padStart(2, '0') + ' : ' + String(Math.floor(audio.duration % 60)).padStart(2, '0');
+                        audioTimeTrack.textContent = String(Math.floor(audio.currentTime / 60)).padStart(2, '0') + ' : ' + String(Math.floor(audio.currentTime % 60)).padStart(2, '0');
+                    }
+                
+                };
+                // handle when moving or skipping to a new position
+                progress.oninput = function() {
+                    const seekPosition = progress.value * audio.duration / 100
+                    audio.currentTime = seekPosition;
+                };
+                // handle when click the next song button
+                nextBtn.onclick = function() {
+                    if (app.isRandom) {
+                        app.randomSong();
+                    }
+                    else {
+                        app.nextSong();
+                    }
+                    audio.play();
+                    app.render();
+                    app.scrollToActiveSong();
+                }  
+                // handle when click the previous song button
+                prevBtn.onclick = function() {
+                    if (app.isRandom) {
+                        app.randomSong();
+                    }
+                    else {
+                        app.prevSong();
+                    }
+                    audio.play();
+                    app.render();
+                    app.scrollToActiveSong();
+                }
+                // handle when click the random song button
+                randomSongBtn.onclick = function() {
+                    app.isRandom = !app.isRandom;
+                    randomSongBtn.classList.toggle("active", app.isRandom);
+                }
+                // handle when click the repeat button 
+                repeatSongBtn.onclick = function() {
+                    app.isRepeat = !app.isRepeat;
+                    repeatSongBtn.classList.toggle("active", app.isRepeat);
+                }
+                // handle next song when a song is ended
+                audio.onended = function() {
+                    if (!app.isRepeat) {
+                        nextBtn.click();
+                    }
+                    else {
+                        audio.play();
+                    }
+                }
+                // handle when click any song in the playlist
+                playlist.onclick = function(e) {
+                    const inActiveSong = e.target.closest('.song:not(.active)');
+                    if (inActiveSong || e.target.closest('.option')) {
+                        // handle when click at the song
+                        if (inActiveSong) {
+                            app.currentIndex = Number(inActiveSong.dataset.index);
+                            app.loadCurrentSong();
+                            app.render();
+                            audio.play();
+                        }
+                        // handle when click at the option
+                        if (e.target.closest('.option')) {
+
+                        }
+                    }
+                }
+            },
+            scrollToActiveSong: function() {
+                setTimeout(function() {
+                    $('.song.active').scrollIntoView({
+                        behavior:'smooth',
+                        block: 'center',
+                    })
+                }, 500)
+            },
+            loadCurrentSong: function() {
+
+                heading.textContent = this.currentSong.name;
+                cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`;
+                audio.src = this.currentSong.path;
+                
+  
+            },
+            nextSong: function() {
+                app.currentIndex++;
+                if (app.currentIndex > app.songs.length - 1) {
+                    app.currentIndex = 0;
+                }
+                app.loadCurrentSong();
+            },
+            prevSong: function() {
+                app.currentIndex > 0 ? app.currentIndex-- : 0;
+                app.loadCurrentSong();
+            },
+            randomSong: function() {
+                let randomIndex; 
+                do {
+                    randomIndex = Math.floor(Math.random() * app.songs.length);
+                } while (app.currentIndex === randomIndex);
+                app.currentIndex = randomIndex;
+                app.loadCurrentSong();
+            },
+            start: function () {
+                this.defineProperties(); // define properties for the object
+                this.handleEvents(); // Listen and handle DOM events
+                this.loadCurrentSong(); // load the first song into UI when playing the app
+                this.render(); // Render songs to the playlist
+            }
+        }
+
+        app.start();
+
+    </script>
+</body>
+
+</html>
